@@ -19,7 +19,8 @@ jobs:
     strategy:
       fail-fast: false
     defaults:
-      working-directory: chapter-01  
+      run:
+        working-directory: chapter-01  
     steps:
 
       - name: checkout repo
