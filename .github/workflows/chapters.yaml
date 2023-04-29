@@ -12,7 +12,7 @@ on:
 
 jobs:
 
-  chapter_01:
+  chapters:
 
     name: Chapter 01
     strategy:
@@ -20,6 +20,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: chapter_01   
     steps:
 
       - name: checkout repo
@@ -36,6 +39,5 @@ jobs:
       # as it is set as an "override" for current directory
 
       - name: test
-        working-directory: chapter_01
         run: |
           pwd
