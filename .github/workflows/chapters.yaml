@@ -35,6 +35,7 @@ jobs:
 
       - name: check
         uses: actions-rs/cargo@v1
-        working-directory: chapter-01
         with:
           command: check 
+        run:
+          working-directory: chapter-01
