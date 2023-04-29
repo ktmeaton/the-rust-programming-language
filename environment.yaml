@@ -1,0 +1,12 @@
+name: rust
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - conda-forge::rust
+  - conda-forge::python
+  - conda-forge::pip
+  - conda-forge::pre-commit
+  - pip:
+    - commitizen
