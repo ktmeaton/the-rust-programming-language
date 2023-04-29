@@ -14,16 +14,16 @@ jobs:
 
   chapters:
 
-    name: Chapter
+    name: X
     strategy:
       fail-fast: false
       matrix:
+        chapter: [01, 02]
         os: [ubuntu-latest, windows-latest]
-        chapter: [chapter_01, chapter_02]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ${{ matrix.chapter }}  
+        working-directory: chapter_${{ matrix.chapter }}  
     steps:
 
       - name: checkout repo
