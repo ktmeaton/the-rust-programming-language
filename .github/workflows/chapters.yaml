@@ -35,6 +35,7 @@ jobs:
       # `cargo check` command here will use installed `nightly`
       # as it is set as an "override" for current directory
 
-      - name: check
+      - name: test
+        working-directory: chapter-01
         run: |
-          cargo check --manifest-path .\chapter-01\hello_cargo\Cargo.toml
+          pwd
