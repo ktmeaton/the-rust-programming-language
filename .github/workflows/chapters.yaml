@@ -42,3 +42,15 @@ jobs:
       - name: check
         run: |
           cargo check
+
+      - name: format
+        run: |
+          cargo fmt
+
+      - name: lint
+        run: |
+          cargo clippy
+
+      - name: build
+        run: |
+          cargo build
