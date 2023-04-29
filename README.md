@@ -25,5 +25,10 @@ mamba env create -f environment.yaml
 1. Lint Rust code.
 
     ```bash
-    cargo clippy
+    cargo clippy --fix
+    ```
+1. Install pre-commit and commitizen
+
+    ```
+    pip install Commitizen pre-commit
     ```
