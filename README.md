@@ -31,4 +31,6 @@ mamba env create -f environment.yaml
 
     ```
     pip install Commitizen pre-commit
+    cz init
+    pre-commit install
     ```
