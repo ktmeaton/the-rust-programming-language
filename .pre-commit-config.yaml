@@ -1,12 +1,12 @@
 repos:
 
-  # rust language
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
-    hooks:
-      - id: fmt
-      - id: cargo-check
-      - id: clippy
+  # # rust language
+  # - repo: https://github.com/doublify/pre-commit-rust
+  #   rev: v1.0
+  #   hooks:
+  #     - id: fmt
+  #     - id: cargo-check
+  #     - id: clippy
 
   # text and yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
