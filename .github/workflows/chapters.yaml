@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: chapter_${{ matrix.chapter }}  
+        working-directory: chapter_${{ matrix.chapter }}
     steps:
 
       - name: checkout repo
@@ -49,7 +49,7 @@ jobs:
 
       - name: lint
         run: |
-          cargo clippy
+          cargo clippy --fix
 
       - name: build
         run: |
