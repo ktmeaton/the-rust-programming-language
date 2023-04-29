@@ -15,12 +15,11 @@ jobs:
   chapter_01:
 
     name: Chapter 01
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    defaults:
-      run:
-        working-directory: chapter-01  
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
 
       - name: checkout repo
@@ -37,6 +36,5 @@ jobs:
       # as it is set as an "override" for current directory
 
       - name: check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+        run: |
+          cargo check --manifest-path .\chapter-01\hello_cargo\Cargo.toml
