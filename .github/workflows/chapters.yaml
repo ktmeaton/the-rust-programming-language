@@ -39,6 +39,6 @@ jobs:
       # `cargo check` command here will use installed `nightly`
       # as it is set as an "override" for current directory
 
-      - name: test
+      - name: check
         run: |
-          pwd
+          cargo check
