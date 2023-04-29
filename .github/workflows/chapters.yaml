@@ -14,11 +14,11 @@ jobs:
 
   chapters:
 
-    name: X
+    name: Chapter
     strategy:
       fail-fast: false
       matrix:
-        chapter: [01, 02]
+        chapter: ["01", "02"]
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     defaults:
