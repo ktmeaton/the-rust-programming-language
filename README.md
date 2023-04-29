@@ -10,21 +10,10 @@ mamba env create -f environment.yaml
 
 ## Lint
 
-1. Install `clippy` and `rustfmt`.
+1. Install `rustfmt`, `clippy`, and `miri`.
 
     ```bash
-    rustup component add clippy rustfmt miri
-
-    # or with conda
-    # note, clippy doesn't install with conda?
-    cargo install rustfmt miri
-    ```
-
-
-    How about `miri`?
-
-    ```bash
-    cargo install miri
+    rustup +nightly component add rustfmt clippy miri
     ```
 
 1. Format Rust code.
