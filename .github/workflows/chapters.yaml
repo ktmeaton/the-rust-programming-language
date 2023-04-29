@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+    defaults:
+      working-directory: chapter-01  
     steps:
 
       - name: checkout repo
@@ -36,6 +38,4 @@ jobs:
       - name: check
         uses: actions-rs/cargo@v1
         with:
-          command: check 
-        run:
-          working-directory: chapter-01
+          command: check
