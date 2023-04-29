@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - conda-forge::rust
-  - conda-forge::python
+  - conda-forge::python=3.9
   - conda-forge::pip
   - conda-forge::pre-commit
   - pip:
