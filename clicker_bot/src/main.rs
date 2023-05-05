@@ -1,6 +1,10 @@
 use enigo::*;
 use rand::Rng;
 use std::{thread, time};
+use screenshots::Screen;
+use std::{fs, time::Instant};
+use image;
+use image::{GenericImageView, ImageBuffer, Pixel}; // to allow calling .pixels()
 
 struct MouseSettings {
     start_x: i32,
@@ -173,7 +177,43 @@ fn main() {
 
     let mut bot = Enigo::new();
 
+    // Screenshot
 
+    let (x,y) = bot.mouse_location();
+    println!("{x}, {y}");
+
+    // let img = image::open("data/ferris.png").expect("File not found!");
+    // let (w, h) = img.dimensions();
+    // let mut output = ImageBuffer::new(w, h); // create a new buffer for our output
+
+    // 24 12
+    // // Iterate through x and y
+    // for (x, y, pixel) in img.pixels() {
+    //     println!("{}, {}", x, y);
+    //     output.put_pixel(x, y,
+    //         // pixel.map will iterate over the r, g, b, a values of the pixel
+    //         pixel.map(|p| p.saturating_sub(65))
+    //     );
+    // }
+    // output.save("data/dark_ferris.png");
+
+    let start = Instant::now();
+    let screens = Screen::all().unwrap();
+    println!("{screens:?}");
+    // for screen in screens {
+    //     println!("capturer {screen:?}");
+    //     let mut image = screen.capture().unwrap();
+    //     let mut buffer = image.buffer();
+
+    //     println!("{}", screen.display_info.id);
+    //     fs::write(format!("target/{}.png", screen.display_info.id), buffer).unwrap();
+
+    //     image = screen.capture_area(300, 300, 300, 300).unwrap();
+    //     buffer = image.buffer();
+    //     fs::write(format!("target/{}-2.png", screen.display_info.id), buffer).unwrap();
+    //   }
+
+    // Mouse Movement
     let mouse_settings = MouseSettings {
         start_x: 400,
         start_y: 500,
@@ -187,7 +227,7 @@ fn main() {
         target_area: 30,
     };
 
-    thread::sleep(time::Duration::from_millis(2000 as u64));
-    wind_mouse(mouse_settings, &mut bot);
+    //thread::sleep(time::Duration::from_millis(2000 as u64));
+    // wind_mouse(mouse_settings, &mut bot);
 
 }
