@@ -44,7 +44,7 @@ fn hypotenuse(a: f32, b: f32) -> f32{
 
 }
 
-fn wind_mouse(mut settings: MouseSettings) {
+fn wind_mouse(mut settings: MouseSettings, bot: &mut enigo::Enigo) {
     // WindMouse algorithm. Calls the move_mouse kwarg with each new step.
     // Author: Benjamin J. Land
     // Source: https://ben.land/post/2021/04/25/windmouse-human-mouse-movement/
@@ -52,26 +52,26 @@ fn wind_mouse(mut settings: MouseSettings) {
     if settings.gravity < 1 {settings.gravity = 1;}
 
     let mut rng = rand::thread_rng();
+    //let mut wait
 
-    println!("{}", settings);
-    // Get current position
-    // let mut enigo = Enigo::new();
-    // let (x, y) = enigo.mouse_location();
+    (settings.start_x, settings.start_y) = bot.mouse_location();
+
+    bot.mouse_move_to(settings.start_x, settings.start_y);
 
     let wait_diff: i32 = settings.max_wait - settings.min_wait;
 
-    let old_x : i32;
-    let old_y : i32;
+    let mut old_x : i32;
+    let mut old_y : i32;
 
-    let new_x : i32;
-    let new_y : i32;
+    let mut new_x : i32;
+    let mut new_y : i32;
 
-    let step: i32;
+    let mut step: i32;
 
     let mut wind_x = rng.gen_range(0.0..10.0);
     let mut wind_y = rng.gen_range(0.0..10.0);
 
-    let mut random_dist = 0.0;
+    let mut random_dist;
 
     let mut velocity_x = 0.0;
     let mut velocity_y = 0.0;
@@ -81,15 +81,13 @@ fn wind_mouse(mut settings: MouseSettings) {
     let sqrt3 = f32::sqrt(3 as f32);
     let sqrt5 = f32::sqrt(3 as f32);
 
-    let mut current_wait = 0;
-
+    let mut wait: i32;
+    let mut wait_duration;
 
     let mut dist = hypotenuse(
         (settings.end_x - settings.start_x) as f32,
         (settings.end_y - settings.start_y) as f32)
         as i32;
-
-    println!("dist: {}", dist);
 
     while dist > 1 {
         settings.wind = std::cmp::min(settings.wind, dist);
@@ -97,7 +95,6 @@ fn wind_mouse(mut settings: MouseSettings) {
         // If we're far from the destination, generate random wind
         if dist >= settings.target_area {
             let w = (rng.gen_range(0.0..1.0) * ((settings.wind as i32) as f32) * 2.0 + 1.0).floor() as i32;
-            println!("w: {}", w);
 
             wind_x = (wind_x as f32) / sqrt3 + ((w - settings.wind) as f32) / sqrt5;
             wind_y = (wind_y as f32) / sqrt3 + ((w - settings.wind) as f32) / sqrt5;
@@ -151,34 +148,46 @@ fn wind_mouse(mut settings: MouseSettings) {
             (settings.start_y - old_y) as f32)
             as i32;
 
-        let wait = (wait_diff * (step / settings.max_step) + settings.min_wait) as i32;
-        // time::Duration::from_millis(
-        current_wait += wait;
-        println!("{}", settings);
-        println!("wind_x: {}", wind_x);
-        println!("wind_y: {}", wind_y);
-        println!("velocity_x: {}", velocity_x);
-        println!("velocity_y: {}", velocity_y);
-        println!("random_dist: {}", random_dist);
-        break
+        wait = (wait_diff * (step / settings.max_step) + settings.min_wait) as i32;
+
+        wait_duration = time::Duration::from_millis(wait as u64);
+        if old_x != new_x || old_y != new_y {
+            thread::sleep(wait_duration);
+            bot.mouse_move_to(settings.start_x, settings.start_y);
+        }
+
+        // println!("{}", settings);
+        // println!("wind_x: {}", wind_x);
+        // println!("wind_y: {}", wind_y);
+        // println!("velocity_x: {}", velocity_x);
+        // println!("velocity_y: {}", velocity_y);
+        // println!("random_dist: {}", random_dist);
+        // println!("step: {}", step);
+        // println!("wait: {}", wait);
+
     }
 
 }
 
 fn main() {
 
+    let mut bot = Enigo::new();
+
+
     let mouse_settings = MouseSettings {
-        start_x: 500,
+        start_x: 400,
         start_y: 500,
         end_x: 1000,
         end_y: 900,
-        gravity: 2,
-        wind: 8,
+        gravity: 8,
+        wind: 4,
         min_wait: 1,
         max_wait: 4,
-        max_step: 3,
-        target_area: 10,
+        max_step: 20,
+        target_area: 30,
     };
 
-    wind_mouse(mouse_settings);
+    thread::sleep(time::Duration::from_millis(2000 as u64));
+    wind_mouse(mouse_settings, &mut bot);
+
 }

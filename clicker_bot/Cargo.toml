@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 enigo = "0.1.2"
 rand = "0.8.5"
+autopilot = "0.4.0"
