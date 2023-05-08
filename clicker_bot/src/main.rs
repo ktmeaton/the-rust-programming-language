@@ -4,7 +4,7 @@ use std::{thread, time};
 use screenshots::Screen;
 use std::{fs, time::Instant};
 use image;
-use image::{GenericImageView, ImageBuffer, Pixel}; // to allow calling .pixels()
+use image::{GenericImageView, ImageBuffer, Pixel};
 
 struct MouseSettings {
     start_x: i32,
@@ -19,8 +19,6 @@ struct MouseSettings {
     target_area: i32,
 }
 
-// To use the `{}` marker, the trait `fmt::Display` must be implemented
-// manually for the type.
 impl std::fmt::Display for MouseSettings {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -49,17 +47,15 @@ fn hypotenuse(a: f32, b: f32) -> f32{
 }
 
 fn wind_mouse(mut settings: MouseSettings, bot: &mut enigo::Enigo) {
-    // WindMouse algorithm. Calls the move_mouse kwarg with each new step.
+    // WindMouse algorithm. 
     // Author: Benjamin J. Land
     // Source: https://ben.land/post/2021/04/25/windmouse-human-mouse-movement/
 
     if settings.gravity < 1 {settings.gravity = 1;}
 
     let mut rng = rand::thread_rng();
-    //let mut wait
 
     (settings.start_x, settings.start_y) = bot.mouse_location();
-
     bot.mouse_move_to(settings.start_x, settings.start_y);
 
     let wait_diff: i32 = settings.max_wait - settings.min_wait;
@@ -175,12 +171,12 @@ fn wind_mouse(mut settings: MouseSettings, bot: &mut enigo::Enigo) {
 
 fn main() {
 
-    let mut bot = Enigo::new();
+    // let mut bot = Enigo::new();
 
     // Screenshot
 
-    let (x,y) = bot.mouse_location();
-    println!("{x}, {y}");
+    // let (x,y) = bot.mouse_location();
+    // println!("{x}, {y}");
 
     // let img = image::open("data/ferris.png").expect("File not found!");
     // let (w, h) = img.dimensions();
@@ -196,10 +192,10 @@ fn main() {
     //     );
     // }
     // output.save("data/dark_ferris.png");
-
-    let start = Instant::now();
-    let screens = Screen::all().unwrap();
-    println!("{screens:?}");
+    
+    // let start = Instant::now();
+    // let screens = Screen::all().unwrap();
+    // println!("{screens:?}");
     // for screen in screens {
     //     println!("capturer {screen:?}");
     //     let mut image = screen.capture().unwrap();
