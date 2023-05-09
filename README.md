@@ -1,7 +1,5 @@
 # The Rust Programming Language
 
-Test
-
 ## Conda
 
 The environment provides core Rust components as well as developer accessories.
