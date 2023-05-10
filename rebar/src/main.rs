@@ -26,12 +26,12 @@ fn main() {
     let sequences_path = format!("data/XBB.1.16.fasta");
     let dataset_path = "dataset/sars-cov-2-latest";
     let reference_path = format!("{}/{}", dataset_path, "reference.fasta");
-    let parents_path = format!("{}/{}", dataset_path, "parents.fasta");
+    let populations_path = format!("{}/{}", dataset_path, "populations.fasta");
 
     // Dataset subcommand
-    info!("Importing parents: {}", parents_path);
+    info!("Importing populations: {}", populations_path);
     let mut dataset = Dataset::new();
-    dataset.set_sequences(reference_path.clone(), parents_path, mask).unwrap();
+    dataset.set_sequences(reference_path.clone(), populations_path, mask).unwrap();
     dataset.set_mutations().unwrap();
     //println!("{}", dataset.summary());
 

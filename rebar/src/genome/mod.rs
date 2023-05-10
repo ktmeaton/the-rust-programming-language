@@ -7,6 +7,7 @@ use eyre::Report;
 use crate::dataset::Dataset;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
+use crate::barcode::BarcodeMatch;
 
 #[derive(Debug)]
 pub struct Genome {
@@ -16,6 +17,7 @@ pub struct Genome {
     pub missing: Vec<isize>,
     pub deletions: Vec<Mutation>,
     pub substitutions: Vec<Mutation>,
+    pub consensus_population: BarcodeMatch,
 }
 
 impl std::fmt::Display for Genome {
@@ -33,6 +35,7 @@ impl Genome {
             missing: Vec::new(),
             deletions: Vec::new(),
             substitutions: Vec::new(),
+            consensus_population: BarcodeMatch::new(),
         }
     }
 
@@ -78,7 +81,7 @@ impl Genome {
         Ok(())
     }
 
-    pub fn summarise_barcode(&mut self, dataset : &Dataset) -> Result<(), Report>  {
+    pub fn summarise_barcode(&mut self, dataset : &Dataset, mutations: &Vec<Mutation>) -> Result<(), Report>  {
 
         debug!("sequence: {}", self.id);
     
@@ -86,15 +89,15 @@ impl Genome {
         // conflict_alt: Mutation in genome is absent in population's barcode.
         // conflict_ref: Mutation in population's barcode is absent in genome.
         // private: Private mutations only found in genome       
-        // total: support - conflict_ref
+        // barcode_summary: final stat, support - conflict_ref
         let mut support: HashMap<String, isize> = HashMap::new();
         let mut conflict_alt: HashMap<String, isize> = HashMap::new();
         let mut conflict_ref: HashMap<String, isize> = HashMap::new();
         let mut private: Vec<Mutation> = Vec::new();
-        let mut total: HashMap<String, isize> = HashMap::new();
+        let mut barcode_summary: HashMap<String, isize> = HashMap::new();
 
         // support
-        for mutation in &self.substitutions {
+        for mutation in mutations {
             // Barcode match
             if dataset.mutations.contains_key(mutation){
 
@@ -109,8 +112,6 @@ impl Genome {
                 private.push(mutation.clone())
             }
         }
-
-        let mut max_total = 0;
 
         // conflict_ref, conflict_alt, and total
         for population in support.keys() {
@@ -134,59 +135,12 @@ impl Genome {
 
             // total
             let num_total = support[population] - num_conflict_ref;
-            total.insert(population.clone(), num_total);
+            barcode_summary.insert(population.clone(), num_total);
 
-            if num_total >= max_total {
-                max_total = num_total;
-            }
-        }
+        }        
     
-        // Now is where it might break into a separate function
-        // To find the top lineages, and remove outliers
-
-        // --------------------------------------------------------------------    
-        // Search for top_populations and consensus_population   
-        let top_populations_total = total
-            .iter()
-            .filter(|(_pop, count)| count >= &&max_total)
-            .collect::<HashMap<_, _>>();
-
-        let top_populations = top_populations_total.keys();
-
-        // If we have a tree, we can summarize max_populations by 
-        // their common ancestor. Until then, just use first for speed.
-        let consensus_population = top_populations.clone().next().unwrap().to_string();
-        let barcode = dataset.sequences[&consensus_population].substitutions.clone();
-        let support = barcode
-            .iter()
-            .filter(|sub| self.substitutions.contains(&sub))
-            .collect::<Vec<_>>();
-        let conflict_ref = barcode
-            .iter()
-            .filter(|sub| !self.substitutions.contains(&sub))
-            .collect::<Vec<_>>();
-        let conflict_alt = self.substitutions
-            .iter()
-            .filter(|sub| !barcode.contains(&sub))
-            .collect::<Vec<_>>();
-        let missing = barcode
-            .iter()
-            .filter(|sub| self.missing.contains(&sub.coord))
-            .collect::<Vec<_>>();   
-
-
-        //debug!("\tconsensus_population: {}", consensus_population);
-        debug!("\tdefinition: ");
-        debug!("\tconsensus_population: {}", consensus_population);
-        debug!("\ttop_populations: {}", top_populations.clone().join(", "));
-        debug!("\tbarcode: {}", barcode.iter().join(", "));
-        debug!("\tsupport: {}", support.clone().iter().join(", "));
-        debug!("\tmissing: {}", missing.clone().iter().join(", "));
-        debug!("\tconflict_ref: {}", conflict_ref.clone().iter().join(", "));
-        debug!("\tconflict_alt: {}", conflict_alt.clone().iter().join(", "));   
-        debug!("\trecombinant: ");
-        debug!("\trecursive: ");
-        debug!("\tedge_case: ");
+        let mut barcode_match = BarcodeMatch::new();
+        barcode_match.search(&mutations, &self.missing, &barcode_summary, &dataset).unwrap();
 
         Ok(())
     }    

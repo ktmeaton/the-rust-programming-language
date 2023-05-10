@@ -101,7 +101,10 @@ impl Dataset {
 
 
         for (_id, genome) in &mut self.sequences {
-            genome.summarise_barcode(&dataset).unwrap();
+            let mutations = genome.substitutions.clone();
+            genome.summarise_barcode(&dataset, &mutations).unwrap();
+
+            break
         }        
 
         Ok(())
