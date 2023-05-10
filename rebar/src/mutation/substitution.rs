@@ -1,6 +1,6 @@
 use std::{cmp::Ordering};
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Hash)]
 pub struct Substitution {
     pub coord: isize,
     pub reference: char,

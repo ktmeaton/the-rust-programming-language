@@ -1,5 +1,6 @@
 //use clap::Parser;
 use bio::io::fasta;
+use std::collections::HashMap;
 
 use rebar::genome::genome::Genome;
 use rebar::dataset::dataset::Dataset;
@@ -34,7 +35,7 @@ fn main() {
     // Source: https://gist.github.com/jimmychu0807/9a89355e642afad0d2aeda52e6ad2424#file-string-conversion-rs-L24
     // Author: Jimmy Chu
     let reference_seq = reference.seq().iter().map(|b| *b as char).collect::<Vec<_>>();
-    let mut genomes: Vec<Genome> = Vec::new();
+    let mut genomes: HashMap<String, Genome> = HashMap::new();
     
     // Read in populations, barcodes
     for record in parents_reader.records() {
@@ -51,12 +52,13 @@ fn main() {
         let mut genome = Genome::new(id, seq, alphabet);
 
         genome.parse_sequence(&reference_seq, mask);
-        genomes.push(genome); 
+        genomes.insert(genome.id.clone(), genome);
     }
 
+    //println!("{:?}", genomes);
     let dataset = Dataset::new(genomes);
-    println!("{:?}", dataset);
-    let result = dataset.create_barcodes();
+    //println!("{:?}", dataset);
+    //let result = dataset.create_barcodes();
  
 }
 
