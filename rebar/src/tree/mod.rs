@@ -156,3 +156,24 @@ pub fn build_tree() -> Result<(Tree<String>, HashMap<String, id_tree::NodeId>), 
 
 }
 
+pub fn to_newick(tree: Tree<String>, name_to_id: HashMap<String, id_tree::NodeId>) -> Result<(), Report> {
+    println!("to_newick");
+
+    let root_id = &name_to_id[&"root".to_string()];
+
+    let newick = String::new();
+    let newick = String::from("(A,B)root;");
+    for node in tree.traverse_pre_order(&root_id).unwrap() {
+        println!("{}", node.data());
+
+        if node.data() == "XB" {
+            break
+        }
+    }
+
+    println!("{newick}");
+
+
+    Ok(())
+}
+
