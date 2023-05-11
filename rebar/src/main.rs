@@ -2,13 +2,11 @@
 use std::env;
 
 // External crates
-// use log::debug;
-// use log::error;
 use log::info;
-// use log::warn;
 
 // This crate
 use rebar::dataset::Dataset;
+use rebar::tree::build_tree;
 //use rebar::traits::Summary;
 
 fn main() {
@@ -42,6 +40,8 @@ fn main() {
 
     query.summarise_barcodes(&dataset).unwrap();
     //println!("{}", query.summary());
+
+    let (_tree, _name_to_id) = build_tree().unwrap();
 
 }
 
