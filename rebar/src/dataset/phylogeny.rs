@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 use eyre::Report;
-use petgraph::graph::Graph;
+use petgraph::graph::{Graph, NodeIndex};
 use petgraph::dot::{Dot, Config};
 use std::fs::File;
 use std::io::Write;
@@ -21,72 +21,91 @@ struct LineageNotesRow<'a> {
     _description: &'a str,
 }
 
-pub fn build_graph(dataset_name: String, dataset_tag: String, dataset_path: String)  -> Result<(), Report> {
-
-    let mut graph_data: HashMap<String, Vec<String>> = HashMap::new();
-    let mut graph_order: Vec<String> = Vec::new();
-    if dataset_name == "sars-cov-2".to_string(){
-        if dataset_tag == "nightly".to_string(){
-            (graph_data, graph_order) = create_graph_data(dataset_path.clone()).unwrap();
-        }
-
-    }
-
-    // ------------------------------------------------------------------------
-    // Construct Graph
-
-    let mut graph: Graph<String, isize> = Graph::new(); 
-    let mut name_to_id = HashMap::new();
-
-    // Add root node
-    let name = "root".to_string();
-    let id = graph.add_node(name.clone());
-    name_to_id.insert(name, id);
-
-    // Add descendants
-    for name in graph_order{
-        let id = graph.add_node(name.clone());
-        name_to_id.insert(name.clone(), id.clone());
-        let parents = graph_data[&name].clone();
-        for parent in parents {
-            let parent_id = name_to_id[&parent];
-            graph.add_edge(parent_id, id, 1);
-        }
-    
-    }
-
-    // Export graph to dot file
-    let graph_path = format!("{}/graph.dot", dataset_path);
-    let mut graph_output = format!("{}", Dot::with_config(
-        &graph, 
-        &[Config::EdgeNoLabel]
-    ));
-    // Set horizontal
-    graph_output = str::replace(&graph_output, "digraph {", "digraph {\n    rankdir=\"LR\";");
-
-    let mut graph_file = File::create(graph_path).unwrap();    
-    graph_file.write_all(&graph_output.as_bytes()).expect("Failed to write graph file.");
-
-    Ok(())
-
+#[derive(Debug)]
+pub struct Phylogeny {
+    pub graph: Graph<String, isize>,
+    pub order: Vec<String>,
+    pub lookup: HashMap<String, NodeIndex>,
 }
 
-pub fn download_lineage_notes(dataset_path: String) -> Result<String, Report> {
+impl Phylogeny {
+    pub fn new() -> Self {
+        Phylogeny { 
+            graph: Graph::new(),
+            order : Vec::new(),
+            lookup: HashMap::new(), 
+        }
+    }
+
+    pub fn build_graph(&mut self, dataset_name: &String, dataset_tag: &String, dataset_dir: &String)  -> Result<(), Report> {
+
+        let mut graph_data: HashMap<String, Vec<String>> = HashMap::new();
+        if dataset_name == "sars-cov-2" {
+            if dataset_tag == "nightly" {
+                (graph_data, self.order) = create_graph_data(dataset_dir).unwrap();
+            }
+
+        }
+
+        // ------------------------------------------------------------------------
+        // Construct Graph
+
+        // Add root node
+        let name = "root".to_string();
+        let id = self.graph.add_node(name.clone());
+        self.lookup.insert(name, id);
+
+        // Add descendants
+        for name in &self.order{
+            let id = self.graph.add_node(name.clone());
+            self.lookup.insert(name.clone(), id.clone());
+            let parents = &graph_data[&name.clone()];
+            for parent in parents {
+                let parent_id = self.lookup[&parent.clone()];
+                self.graph.add_edge(parent_id, id, 1);
+            }
+        
+        }
+
+        Ok(())
+    }
+
+    pub fn export_graph(&self, dataset_dir: &String)  -> Result<(), Report> {
+
+
+        // Export graph to dot file
+        let graph_path = format!("{}/graph.dot", dataset_dir);
+        let mut graph_output = format!("{}", Dot::with_config(
+            &self.graph, 
+            &[Config::EdgeNoLabel]
+        ));
+        // Set horizontal
+        graph_output = str::replace(&graph_output, "digraph {", "digraph {\n    rankdir=\"LR\";");
+
+        let mut graph_file = File::create(graph_path).unwrap();    
+        graph_file.write_all(&graph_output.as_bytes()).expect("Failed to write graph file.");
+
+        Ok(())
+
+    }
+}
+
+pub fn download_lineage_notes(dataset_dir: &String) -> Result<String, Report> {
     // https://raw.githubusercontent.com/cov-lineages/pango-designation/master/lineage_notes.txt
-    let lineage_notes_path = format!("{}/lineage_notes.txt", dataset_path);
+    let lineage_notes_path = format!("{}/lineage_notes.txt", dataset_dir);
     Ok(lineage_notes_path)
 }
 
-pub fn download_alias_key(dataset_path: String) -> Result<String, Report> {
+pub fn download_alias_key(dataset_dir: &String) -> Result<String, Report> {
     // https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json
 
-    let alias_key_path = format!("{}/alias_key.json", dataset_path);
+    let alias_key_path = format!("{}/alias_key.json", dataset_dir);
     Ok(alias_key_path)
 }
 
-pub fn import_alias_key(dataset_path: String) -> Result<HashMap<String, Vec<String>>, Report> {
+pub fn import_alias_key(dataset_dir: &String) -> Result<HashMap<String, Vec<String>>, Report> {
 
-    let alias_key_path = download_alias_key(dataset_path.clone()).expect("Couldn't download alias_key from url.");
+    let alias_key_path = download_alias_key(dataset_dir).expect("Couldn't download alias_key from url.");
     let alias_key_str = std::fs::read_to_string(alias_key_path).expect("Couldn't read alias_key file.");
     let alias_key_val: serde_json::Value = serde_json::from_str(&alias_key_str).expect("Couldn't convert alias_key to json");
     let alias_key_raw: serde_json::Map<String, serde_json::Value> = alias_key_val
@@ -133,16 +152,16 @@ pub fn import_alias_key(dataset_path: String) -> Result<HashMap<String, Vec<Stri
     Ok(alias_key)
 }
 
-pub fn create_graph_data(dataset_path: String) -> Result<(HashMap<String, Vec<String>>, Vec<String>), Report> {
+pub fn create_graph_data(dataset_dir: &String) -> Result<(HashMap<String, Vec<String>>, Vec<String>), Report> {
 
     // ------------------------------------------------------------------------
     // Download and import data
 
     // Import the alias key
-    let alias_key = import_alias_key(dataset_path.clone()).unwrap();
+    let alias_key = import_alias_key(dataset_dir).unwrap();
 
     // Import the lineage notes
-    let lineage_notes_path = download_lineage_notes(dataset_path).expect("Couldn't download lineage notes from url.");
+    let lineage_notes_path = download_lineage_notes(dataset_dir).expect("Couldn't download lineage notes from url.");
     let mut reader = csv::ReaderBuilder::new().delimiter(b'\t').from_path(lineage_notes_path)?;
     let _headers = reader.headers()?;
 

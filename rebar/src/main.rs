@@ -5,8 +5,8 @@ use std::env;
 use log::info;
 
 // This crate
-use rebar::dataset::Dataset;
-use rebar::tree::{build_graph};
+use rebar::dataset::sequences::Sequences;
+use rebar::dataset::phylogeny::Phylogeny;
 //use rebar::traits::Summary;
 
 fn main() {
@@ -22,30 +22,38 @@ fn main() {
 
     let dataset_name = "sars-cov-2".to_string();
     let dataset_tag = "nightly".to_string();
-    let dataset_path = format!("dataset/{}-{}", dataset_name, dataset_tag);
+    let dataset_dir = format!("dataset/{}-{}", &dataset_name, &dataset_tag);
 
     let mask = 200;
 
     let sequences_path = format!("data/XBB.1.16.fasta");
-    let reference_path = format!("{}/{}", dataset_path, "reference.fasta");
-    let populations_path = format!("{}/{}", dataset_path, "populations.fasta");
+    let reference_path = format!("{}/{}", &dataset_dir, "reference.fasta");
+    let populations_path = format!("{}/{}", &dataset_dir, "populations.fasta");
+    let phylogeny_path = format!("{}/{}", &dataset_dir, "graph.dot");
 
-    // Dataset subcommand
-    info!("Importing populations: {}", populations_path);
-    let mut dataset = Dataset::new();
-    dataset.set_sequences(reference_path.clone(), populations_path, mask).unwrap();
+    // ------------------------------------------------------------------------
+    // Dataset
+
+    // Sequences
+    info!("Preparing dataset sequences: {}", &populations_path);
+    let mut dataset = Sequences::new();
+    dataset.set_sequences(&reference_path, &populations_path, &mask).unwrap();
     dataset.set_mutations().unwrap();
-    //println!("{}", dataset.summary());
 
-    // Run subcommand
-    info!("Importing query sequences: {}", sequences_path);    
-    let mut query = Dataset::new();
-    query.set_sequences(reference_path.clone(), sequences_path, mask).unwrap();
+    // Phylogeny
+    info!("Preparing dataset phylogeny: {}", &phylogeny_path);
+    let mut phylogeny = Phylogeny::new();
+    phylogeny.build_graph(&dataset_name, &dataset_tag, &dataset_dir).expect("Failed to build phylogeny.");
+    phylogeny.export_graph(&dataset_dir).expect("Failed to export phylogeny.");
 
+    // ------------------------------------------------------------------------
+    // Run
+
+    info!("Importing query sequences: {}", &sequences_path);    
+    let mut query = Sequences::new();
+    query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
     query.summarise_barcodes(&dataset).unwrap();
-    //println!("{}", query.summary());
 
-    let _graph = build_graph(dataset_name, dataset_tag, dataset_path).unwrap();
 
 }
 

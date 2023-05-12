@@ -6,7 +6,7 @@ use eyre::Report;
 
 use crate::traits::Summary;
 use crate::mutation::Mutation;
-use crate::dataset::Dataset;
+use crate::dataset::sequences::Sequences;
 
 #[derive(Debug)]
 pub struct BarcodeMatch {
@@ -32,7 +32,7 @@ impl BarcodeMatch {
         }
     }
 
-    pub fn search(&mut self, mutations: &Vec<Mutation>, missing: &Vec<isize>, barcode_summary : &HashMap<String, isize>, dataset: &Dataset) -> Result<(), Report> {
+    pub fn search(&mut self, mutations: &Vec<Mutation>, missing: &Vec<isize>, barcode_summary : &HashMap<String, isize>, dataset: &Sequences) -> Result<(), Report> {
 
         let mut max_total = 0 as isize;
 
