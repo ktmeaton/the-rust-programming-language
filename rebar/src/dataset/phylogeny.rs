@@ -174,15 +174,14 @@ impl Phylogeny {
 
     pub fn get_common_ancestor(&mut self, name_1: &String, name_2: &String) -> Option<String> {
 
-        let common_ancestor = "root".to_string();
+        let mut common_ancestor = "root".to_string();
 
         let mut name_1_ancestors = self.get_ancestors(name_1).unwrap();
         println!("name_1_ancestors: {:?}", name_1_ancestors);
         let mut name_2_ancestors = self.get_ancestors(name_2).unwrap();
         println!("name_2_ancestors: {:?}", name_2_ancestors); 
 
-        let max_depth = 0;
-        let max_depth_name = 0;
+        let mut max_depth = 0;
         for n1_ancestors in &name_1_ancestors {
             println!("n1: {:?}", n1_ancestors);
             for n2_ancestors in &name_2_ancestors {
@@ -192,6 +191,10 @@ impl Phylogeny {
 
                 for (i, (n1, n2)) in it.enumerate() {
                     println!("\t{}: ({}, {})", i, n1, n2);
+                    if n1 == n2 && i >= max_depth {
+                        max_depth = i;
+                        common_ancestor = n1.clone();
+                    }
                 }
             }
         }
