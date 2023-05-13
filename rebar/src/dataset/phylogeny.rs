@@ -181,18 +181,20 @@ impl Phylogeny {
         let mut name_2_ancestors = self.get_ancestors(name_2).unwrap();
         println!("name_2_ancestors: {:?}", name_2_ancestors); 
 
-        // // Case 1, neither are recombinants
-        // if name_1_ancestors.len() == 1  && name_2_ancestors.len() == 1{
+        let max_depth = 0;
+        let max_depth_name = 0;
+        for n1_ancestors in &name_1_ancestors {
+            println!("n1: {:?}", n1_ancestors);
+            for n2_ancestors in &name_2_ancestors {
+                println!("n2: {:?}", n2_ancestors);
 
-        //     //name_1_ancestors = name_1_ancestors[0];
-        //     // name_2_ancestors = name_2_ancestors[0];
-            
-        //     // let it = name_1_ancestors.iter().zip(name_2_ancestors.iter());
+                let it = n1_ancestors.iter().zip(n2_ancestors.iter());
 
-        //     // for (i, (n_1, n_2)) in it.enumerate() {
-        //     //     println!("{}: ({:?}, {:?})", i, n_1, n_2);
-        //     // }
-        // }
+                for (i, (n1, n2)) in it.enumerate() {
+                    println!("\t{}: ({}, {})", i, n1, n2);
+                }
+            }
+        }
 
         Some(common_ancestor)
     }
