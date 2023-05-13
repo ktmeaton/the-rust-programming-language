@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::{Error, ErrorKind};
 
 //use log::debug;
 
@@ -6,6 +7,8 @@ use itertools::Itertools;
 use eyre::Report;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::dot::{Dot, Config};
+use petgraph::visit::Dfs;
+
 use std::fs::File;
 use std::io::Write;
 
@@ -88,7 +91,60 @@ impl Phylogeny {
         Ok(())
 
     }
-}
+
+    pub fn get_descendants(&self, name: &String) -> Result<Vec<String>, Report> {
+
+        let mut descendants = Vec::new();
+
+        // Find the node that matches the name
+        let node = self.get_node(name).expect(format!["Couldn't find node name in phylogeny: {}", name].as_str());
+        // Construct a depth-first-search (Dfs)
+        let mut dfs = Dfs::new(&self.graph, node);
+        // Skip over self
+        dfs.next(&self.graph);
+        // Iterate over descendants
+        while let Some(nx) = dfs.next(&self.graph) {
+            // Get node name 
+            let nx_name = self.get_name(&nx).unwrap();
+            descendants.push(nx_name);
+        }
+
+        Ok(descendants)
+
+    }
+
+    pub fn get_ancestors(&self, name: &String) -> Option<Vec<String>> {
+        let mut ancestors = Vec::new();
+        ancestors.push("test".to_string());
+    
+        Some(ancestors)
+    }
+
+    pub fn get_node(&self, name: &String) -> Option<NodeIndex> {
+
+        if self.lookup.contains_key(name) {
+            let node = self.lookup[name];
+            return Some(node)
+
+        }
+
+        None
+
+    }
+
+    pub fn get_name(&self, node: &NodeIndex) -> Option<String> {
+
+        for (name, node_l) in &self.lookup {
+            if node == node_l {
+               return Some(name.clone())
+            }
+        }
+
+        None
+
+    }
+}    
+
 
 pub fn download_lineage_notes(dataset_dir: &String) -> Result<String, Report> {
     // https://raw.githubusercontent.com/cov-lineages/pango-designation/master/lineage_notes.txt

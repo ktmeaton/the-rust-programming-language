@@ -46,13 +46,21 @@ fn main() {
     phylogeny.build_graph(&dataset_name, &dataset_tag, &dataset_dir).expect("Failed to build phylogeny.");
     phylogeny.export_graph(&dataset_dir).expect("Failed to export phylogeny.");
 
+    let name = "XBB.1.16".to_string();
+    let descendants = phylogeny.get_descendants(&name).unwrap();
+    println!("{}", descendants.join(", "));
+    
+    let name = "A.1".to_string();
+    let ancestors = phylogeny.get_ancestors(&name).unwrap();
+    println!("{}", ancestors.join(", "));
+
     // ------------------------------------------------------------------------
     // Run
 
-    info!("Importing query sequences: {}", &sequences_path);    
-    let mut query = Sequences::new();
-    query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
-    query.summarise_barcodes(&dataset).unwrap();
+    // info!("Importing query sequences: {}", &sequences_path);    
+    // let mut query = Sequences::new();
+    // query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
+    // query.summarise_barcodes(&dataset).unwrap();
 
 
 }
