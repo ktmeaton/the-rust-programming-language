@@ -172,6 +172,31 @@ impl Phylogeny {
         Some(ancestors)
     }
 
+    pub fn get_common_ancestor(&mut self, name_1: &String, name_2: &String) -> Option<String> {
+
+        let common_ancestor = "root".to_string();
+
+        let mut name_1_ancestors = self.get_ancestors(name_1).unwrap();
+        println!("name_1_ancestors: {:?}", name_1_ancestors);
+        let mut name_2_ancestors = self.get_ancestors(name_2).unwrap();
+        println!("name_2_ancestors: {:?}", name_2_ancestors); 
+
+        // // Case 1, neither are recombinants
+        // if name_1_ancestors.len() == 1  && name_2_ancestors.len() == 1{
+
+        //     //name_1_ancestors = name_1_ancestors[0];
+        //     // name_2_ancestors = name_2_ancestors[0];
+            
+        //     // let it = name_1_ancestors.iter().zip(name_2_ancestors.iter());
+
+        //     // for (i, (n_1, n_2)) in it.enumerate() {
+        //     //     println!("{}: ({:?}, {:?})", i, n_1, n_2);
+        //     // }
+        // }
+
+        Some(common_ancestor)
+    }
+
     pub fn get_node(&self, name: &String) -> Option<NodeIndex> {
 
         if self.lookup.contains_key(name) {

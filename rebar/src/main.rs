@@ -50,9 +50,14 @@ fn main() {
     let descendants = phylogeny.get_descendants(&name).unwrap();
     println!("{}", descendants.join(", "));
     
-    let name = "XBB".to_string();
+    let name = "XA".to_string();
     let ancestors = phylogeny.get_ancestors(&name).unwrap();
-    println!("{:?}", ancestors);
+    println!("ancestors: {:?}", ancestors);
+
+    let name_1 = "BA.1".to_string();
+    let name_2 = "BA.2".to_string();
+    let mrca = phylogeny.get_common_ancestor(&name_1, &name_2).unwrap();
+    println!("mrca: {:?}", mrca);
 
     // ------------------------------------------------------------------------
     // Run
