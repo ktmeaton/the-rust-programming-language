@@ -8,6 +8,7 @@ use eyre::Report;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::dot::{Dot, Config};
 use petgraph::visit::Dfs;
+use petgraph::Direction;
 
 use std::fs::File;
 use std::io::Write;
@@ -113,10 +114,61 @@ impl Phylogeny {
 
     }
 
-    pub fn get_ancestors(&self, name: &String) -> Option<Vec<String>> {
+    pub fn get_ancestors(&mut self, name: &String) -> Option<Vec<Vec<String>>> {
+
         let mut ancestors = Vec::new();
-        ancestors.push("test".to_string());
-    
+
+        // Construct a backwards depth-first-search (Dfs)
+        self.graph.reverse();
+        let node = self.get_node(&name).unwrap();
+        let mut dfs = Dfs::new(&self.graph, node);
+
+        // Walk to the root, there might be multiple paths (recombinants)
+        let mut path_nodes = Vec::new();
+        let mut prev_name = String::new();
+
+        // Skip self
+        dfs.next(&self.graph);
+        while let Some(nx) = dfs.next(&self.graph) {
+            // Get node name 
+            let nx_name = self.get_name(&nx).unwrap();
+
+            // If the previous node name was root, that means we topped
+            // out the search in the last iter, but still have alternate 
+            // recombinant paths to deal with
+            if prev_name == "root" {
+
+                // Add the topped out path to our list of paths
+                path_nodes.reverse();
+                ancestors.push(path_nodes.clone());
+
+                // Initialize vector for new paths
+                //path_nodes = Vec::new();
+
+                // Recursive search, swap graph back and forth
+                self.graph.reverse();
+                let nx_ancestors = self.get_ancestors(&nx_name).unwrap();
+                for ancestor_nodes in &nx_ancestors {
+                    ancestors.push(ancestor_nodes.clone());
+                }
+                self.graph.reverse();
+
+            }
+
+            path_nodes.push(nx_name.clone());
+
+            prev_name = nx_name;
+
+        }
+
+        if prev_name == "root" {
+            path_nodes.reverse();
+            ancestors.push(path_nodes.clone());            
+        }
+   
+        // Restore original graph order   
+
+        self.graph.reverse();
         Some(ancestors)
     }
 

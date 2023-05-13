@@ -50,9 +50,9 @@ fn main() {
     let descendants = phylogeny.get_descendants(&name).unwrap();
     println!("{}", descendants.join(", "));
     
-    let name = "A.1".to_string();
+    let name = "XBB".to_string();
     let ancestors = phylogeny.get_ancestors(&name).unwrap();
-    println!("{}", ancestors.join(", "));
+    println!("{:?}", ancestors);
 
     // ------------------------------------------------------------------------
     // Run
