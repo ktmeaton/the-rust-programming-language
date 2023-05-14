@@ -12,7 +12,6 @@ use crate::dataset::Dataset;
 use crate::genome::Genome;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
-use crate::dataset::phylogeny::Phylogeny;
 
 #[derive(Debug)]
 pub struct Sequences {
@@ -106,8 +105,6 @@ impl Sequences {
         for (_id, genome) in &mut self.sequences {
             let mutations = genome.substitutions.clone();
             genome.summarise_barcode(&dataset, &mutations).unwrap();
-
-            break
         }        
 
         Ok(())

@@ -5,7 +5,6 @@ use itertools::Itertools;
 use eyre::Report;
 
 use crate::dataset::Dataset;
-use crate::dataset::sequences::Sequences;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
 use crate::barcode::BarcodeMatch;

@@ -41,18 +41,18 @@ fn main() {
     dataset.phylogeny.build_graph(&dataset_name, &dataset_tag, &dataset_dir).expect("Failed to build phylogeny.");
     dataset.phylogeny.export_graph(&dataset_dir).expect("Failed to export phylogeny.");
 
-    // // Sequences
-    // info!("Preparing dataset sequences: {}", &populations_path.display());
-    // dataset.populations.set_sequences(&reference_path, &populations_path, &mask).unwrap();
-    // dataset.populations.set_mutations().unwrap();
+    // Sequences
+    info!("Preparing dataset sequences: {}", &populations_path.display());
+    dataset.populations.set_sequences(&reference_path, &populations_path, &mask).unwrap();
+    dataset.populations.set_mutations().unwrap();
 
-    // // ------------------------------------------------------------------------
-    // // Run
+    // ------------------------------------------------------------------------
+    // Run
 
-    // info!("Importing query sequences: {}", &sequences_path.display());    
-    // let mut query = Sequences::new();
-    // query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
-    // query.summarise_barcodes(&dataset).unwrap();
+    info!("Importing query sequences: {}", &sequences_path.display());    
+    let mut query = Sequences::new();
+    query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
+    query.summarise_barcodes(&dataset).unwrap();
 
 
 }

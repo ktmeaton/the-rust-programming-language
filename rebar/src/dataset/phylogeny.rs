@@ -119,22 +119,25 @@ impl Phylogeny {
 
     }
 
-    pub fn get_ancestors(&mut self, name: &String) -> Option<Vec<Vec<String>>> {
+    pub fn get_ancestors(&self, name: &String) -> Option<Vec<Vec<String>>> {
 
         let mut ancestors = Vec::new();
 
+        // Copy graph so we can mutate it here with reverse
+        let mut graph = self.graph.clone();
+
         // Construct a backwards depth-first-search (Dfs)
-        self.graph.reverse();
+        graph.reverse();
         let node = self.get_node(&name).unwrap();
-        let mut dfs = Dfs::new(&self.graph, node);
+        let mut dfs = Dfs::new(&graph, node);
 
         // Walk to the root, there might be multiple paths (recombinants)
         let mut path_nodes = Vec::new();
         let mut prev_name = String::new();
 
         // Skip self?
-        //dfs.next(&self.graph);
-        while let Some(nx) = dfs.next(&self.graph) {
+        //dfs.next(&graph);
+        while let Some(nx) = dfs.next(&graph) {
             // Get node name 
             let nx_name = self.get_name(&nx).unwrap();
 
@@ -151,12 +154,12 @@ impl Phylogeny {
                 //path_nodes = Vec::new();
 
                 // Recursive search, swap graph back and forth
-                self.graph.reverse();
+                graph.reverse();
                 let nx_ancestors = self.get_ancestors(&nx_name).unwrap();
                 for ancestor_nodes in &nx_ancestors {
                     ancestors.push(ancestor_nodes.clone());
                 }
-                self.graph.reverse();
+                graph.reverse();
 
             }
 
@@ -173,20 +176,19 @@ impl Phylogeny {
    
         // Restore original graph order   
 
-        self.graph.reverse();
+        graph.reverse();
         Some(ancestors)
     }
 
-    pub fn get_common_ancestor(&mut self, names: Vec<&str>) -> Option<String> {
+    pub fn get_common_ancestor(&self, names: &Vec<String>) -> Option<String> {
 
         // Phase 1: Count up the ancestors shared between all named populations
         let mut ancestor_counts: HashMap<String, Vec<String>> = HashMap::new();
         let mut ancestor_depths: HashMap<String, isize> = HashMap::new();
 
-        for name in &names {
-            let name = name.to_string();
+        for name in names {
 
-            let ancestor_paths = self.get_ancestors(&name).unwrap();            
+            let ancestor_paths = self.get_ancestors(name).unwrap();   
             for ancestor_path in ancestor_paths {
 
                 for (depth, ancestor) in ancestor_path.iter().enumerate() {
@@ -207,7 +209,7 @@ impl Phylogeny {
         let mut common_ancestor = "root".to_string();        
         let mut max_depth = 0;
 
-        for (ancestor, mut populations) in ancestor_counts {
+        for (ancestor, populations) in ancestor_counts {
             // Which ancestors were found in all populations?
             if populations.len() == names.len() {
                 // Which ancestor has the max depth?

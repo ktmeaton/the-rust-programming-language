@@ -6,7 +6,6 @@ use eyre::Report;
 
 use crate::traits::Summary;
 use crate::mutation::Mutation;
-use crate::dataset::sequences::Sequences;
 use crate::dataset::Dataset;
 
 #[derive(Debug)]
@@ -56,9 +55,9 @@ impl BarcodeMatch {
         if dataset.phylogeny.is_empty() {
             self.consensus_population = self.top_populations[0].clone();
         }
+        // Otherwise, consensus is mrca of top
         else {
-            println!("top_populations: {:?}", self.top_populations);
-            self.consensus_population = self.top_populations[0].clone();
+            self.consensus_population = dataset.phylogeny.get_common_ancestor(&self.top_populations).unwrap();
         }
 
         self.barcode = dataset.populations.sequences[&self.consensus_population].substitutions.clone();
