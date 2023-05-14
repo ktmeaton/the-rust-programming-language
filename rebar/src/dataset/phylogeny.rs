@@ -1,14 +1,11 @@
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind};
-
-//use log::debug;
+use std::path::{Path, PathBuf};
 
 use itertools::Itertools;
 use eyre::Report;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::dot::{Dot, Config};
 use petgraph::visit::Dfs;
-use petgraph::Direction;
 
 use std::fs::File;
 use std::io::Write;
@@ -41,7 +38,15 @@ impl Phylogeny {
         }
     }
 
-    pub fn build_graph(&mut self, dataset_name: &String, dataset_tag: &String, dataset_dir: &String)  -> Result<(), Report> {
+    pub fn is_empty(&self) -> bool {
+        if self.lookup.len() == 0 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn build_graph(&mut self, dataset_name: &str, dataset_tag: &str, dataset_dir: &Path)  -> Result<(), Report> {
 
         let mut graph_data: HashMap<String, Vec<String>> = HashMap::new();
         if dataset_name == "sars-cov-2" {
@@ -74,11 +79,11 @@ impl Phylogeny {
         Ok(())
     }
 
-    pub fn export_graph(&self, dataset_dir: &String)  -> Result<(), Report> {
+    pub fn export_graph(&self, dataset_dir: &Path)  -> Result<(), Report> {
 
 
         // Export graph to dot file
-        let graph_path = format!("{}/graph.dot", dataset_dir);
+        let graph_path = dataset_dir.join("graph.dot");
         let mut graph_output = format!("{}", Dot::with_config(
             &self.graph, 
             &[Config::EdgeNoLabel]
@@ -101,8 +106,8 @@ impl Phylogeny {
         let node = self.get_node(name).expect(format!["Couldn't find node name in phylogeny: {}", name].as_str());
         // Construct a depth-first-search (Dfs)
         let mut dfs = Dfs::new(&self.graph, node);
-        // Skip over self
-        dfs.next(&self.graph);
+        // Skip over self?
+        // dfs.next(&self.graph);
         // Iterate over descendants
         while let Some(nx) = dfs.next(&self.graph) {
             // Get node name 
@@ -127,8 +132,8 @@ impl Phylogeny {
         let mut path_nodes = Vec::new();
         let mut prev_name = String::new();
 
-        // Skip self
-        dfs.next(&self.graph);
+        // Skip self?
+        //dfs.next(&self.graph);
         while let Some(nx) = dfs.next(&self.graph) {
             // Get node name 
             let nx_name = self.get_name(&nx).unwrap();
@@ -172,29 +177,45 @@ impl Phylogeny {
         Some(ancestors)
     }
 
-    pub fn get_common_ancestor(&mut self, name_1: &String, name_2: &String) -> Option<String> {
+    pub fn get_common_ancestor(&mut self, names: Vec<&str>) -> Option<String> {
 
-        let mut common_ancestor = "root".to_string();
+        // Phase 1: Count up the ancestors shared between all named populations
+        let mut ancestor_counts: HashMap<String, Vec<String>> = HashMap::new();
+        let mut ancestor_depths: HashMap<String, isize> = HashMap::new();
 
-        let mut name_1_ancestors = self.get_ancestors(name_1).unwrap();
-        println!("name_1_ancestors: {:?}", name_1_ancestors);
-        let mut name_2_ancestors = self.get_ancestors(name_2).unwrap();
-        println!("name_2_ancestors: {:?}", name_2_ancestors); 
+        for name in &names {
+            let name = name.to_string();
 
+            let ancestor_paths = self.get_ancestors(&name).unwrap();            
+            for ancestor_path in ancestor_paths {
+
+                for (depth, ancestor) in ancestor_path.iter().enumerate() {
+                    let depth = depth as isize;
+                    ancestor_depths.entry(ancestor.clone()).or_insert(depth);
+                    ancestor_counts.entry(ancestor.clone())
+                        .and_modify(|p| {
+                            p.push(name.clone());
+                            p.dedup();
+                            }
+                        )
+                        .or_insert(vec![name.clone()]);
+                }
+            }
+        }
+
+        // Phase 2: Find the highest depth ancestor shared between all
+        let mut common_ancestor = "root".to_string();        
         let mut max_depth = 0;
-        for n1_ancestors in &name_1_ancestors {
-            println!("n1: {:?}", n1_ancestors);
-            for n2_ancestors in &name_2_ancestors {
-                println!("n2: {:?}", n2_ancestors);
 
-                let it = n1_ancestors.iter().zip(n2_ancestors.iter());
+        for (ancestor, mut populations) in ancestor_counts {
+            // Which ancestors were found in all populations?
+            if populations.len() == names.len() {
+                // Which ancestor has the max depth?
+                let depth = ancestor_depths[&ancestor];
+                if depth > max_depth {
+                    max_depth = depth;
+                    common_ancestor = ancestor;
 
-                for (i, (n1, n2)) in it.enumerate() {
-                    println!("\t{}: ({}, {})", i, n1, n2);
-                    if n1 == n2 && i >= max_depth {
-                        max_depth = i;
-                        common_ancestor = n1.clone();
-                    }
                 }
             }
         }
@@ -228,20 +249,19 @@ impl Phylogeny {
 }    
 
 
-pub fn download_lineage_notes(dataset_dir: &String) -> Result<String, Report> {
+pub fn download_lineage_notes(dataset_dir: &Path) -> Result<PathBuf, Report> {
     // https://raw.githubusercontent.com/cov-lineages/pango-designation/master/lineage_notes.txt
-    let lineage_notes_path = format!("{}/lineage_notes.txt", dataset_dir);
+    let lineage_notes_path = dataset_dir.join("lineage_notes.txt");
     Ok(lineage_notes_path)
 }
 
-pub fn download_alias_key(dataset_dir: &String) -> Result<String, Report> {
+pub fn download_alias_key(dataset_dir: &Path) -> Result<PathBuf, Report> {
     // https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json
-
-    let alias_key_path = format!("{}/alias_key.json", dataset_dir);
+    let alias_key_path = dataset_dir.join("alias_key.json");
     Ok(alias_key_path)
 }
 
-pub fn import_alias_key(dataset_dir: &String) -> Result<HashMap<String, Vec<String>>, Report> {
+pub fn import_alias_key(dataset_dir: &Path) -> Result<HashMap<String, Vec<String>>, Report> {
 
     let alias_key_path = download_alias_key(dataset_dir).expect("Couldn't download alias_key from url.");
     let alias_key_str = std::fs::read_to_string(alias_key_path).expect("Couldn't read alias_key file.");
@@ -290,7 +310,7 @@ pub fn import_alias_key(dataset_dir: &String) -> Result<HashMap<String, Vec<Stri
     Ok(alias_key)
 }
 
-pub fn create_graph_data(dataset_dir: &String) -> Result<(HashMap<String, Vec<String>>, Vec<String>), Report> {
+pub fn create_graph_data(dataset_dir: &Path) -> Result<(HashMap<String, Vec<String>>, Vec<String>), Report> {
 
     // ------------------------------------------------------------------------
     // Download and import data

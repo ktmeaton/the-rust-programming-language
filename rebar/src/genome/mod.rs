@@ -4,10 +4,12 @@ use log::debug;
 use itertools::Itertools;
 use eyre::Report;
 
+use crate::dataset::Dataset;
 use crate::dataset::sequences::Sequences;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
 use crate::barcode::BarcodeMatch;
+
 
 #[derive(Debug)]
 pub struct Genome {
@@ -81,7 +83,7 @@ impl Genome {
         Ok(())
     }
 
-    pub fn summarise_barcode(&mut self, dataset : &Sequences, mutations: &Vec<Mutation>) -> Result<(), Report>  {
+    pub fn summarise_barcode(&mut self, dataset : &Dataset, mutations: &Vec<Mutation>) -> Result<(), Report>  {
 
         debug!("sequence: {}", self.id);
     
@@ -99,9 +101,9 @@ impl Genome {
         // support
         for mutation in mutations {
             // Barcode match
-            if dataset.mutations.contains_key(mutation){
+            if dataset.populations.mutations.contains_key(mutation){
 
-                let population_matches = dataset.mutations[mutation].clone();
+                let population_matches = dataset.populations.mutations[mutation].clone();
 
                 for population in population_matches{
                     *support.entry(population).or_insert(0) += 1;
@@ -115,7 +117,7 @@ impl Genome {
 
         // conflict_ref, conflict_alt, and total
         for population in support.keys() {
-            let population_sub = &dataset.sequences[population].substitutions;
+            let population_sub = &dataset.populations.sequences[population].substitutions;
 
             // conflict_ref
             let population_conflict_ref = population_sub

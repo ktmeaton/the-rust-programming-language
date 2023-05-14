@@ -1,5 +1,6 @@
 // Standard library
 use std::collections::HashMap;
+use std::path::Path;
 
 // External crates
 use bio::io::fasta;
@@ -7,9 +8,11 @@ use itertools::Itertools;
 use eyre::Report;
 
 // This crate
+use crate::dataset::Dataset;
 use crate::genome::Genome;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
+use crate::dataset::phylogeny::Phylogeny;
 
 #[derive(Debug)]
 pub struct Sequences {
@@ -36,7 +39,7 @@ impl Sequences {
         Sequences { sequences: HashMap::new(), mutations : HashMap::new() }
     }
 
-    pub fn set_sequences(&mut self, reference_path: &String, sequences_path: &String, mask : &isize) -> Result<(), Report> {
+    pub fn set_sequences(&mut self, reference_path: &Path, sequences_path: &Path, mask : &isize) -> Result<(), Report> {
         let mut sequences: HashMap<String, Genome> = HashMap::new();
 
         let reference_reader = fasta::Reader::from_file(reference_path).unwrap();
@@ -97,7 +100,7 @@ impl Sequences {
 
     }
 
-    pub fn summarise_barcodes(&mut self, dataset: &Sequences) -> Result<(), Report> {
+    pub fn summarise_barcodes(&mut self, dataset: &Dataset) -> Result<(), Report> {
 
 
         for (_id, genome) in &mut self.sequences {

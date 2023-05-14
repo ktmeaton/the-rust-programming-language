@@ -1,13 +1,13 @@
 
 use std::env;
+use std::path::Path;
 
 // External crates
 use log::info;
 
 // This crate
+use rebar::dataset::Dataset;
 use rebar::dataset::sequences::Sequences;
-use rebar::dataset::phylogeny::Phylogeny;
-//use rebar::traits::Summary;
 
 fn main() {
 
@@ -20,49 +20,36 @@ fn main() {
 
     env_logger::init();
 
-    let dataset_name = "sars-cov-2".to_string();
-    let dataset_tag = "nightly".to_string();
-    let dataset_dir = format!("dataset/{}-{}", &dataset_name, &dataset_tag);
+    let dataset_name = "sars-cov-2";
+    let dataset_tag = "nightly";
+    let dataset_dir = Path::new("dataset/sars-cov-2-nightly");
 
     let mask = 200;
 
-    let sequences_path = format!("data/XBB.1.16.fasta");
-    let reference_path = format!("{}/{}", &dataset_dir, "reference.fasta");
-    let populations_path = format!("{}/{}", &dataset_dir, "populations.fasta");
-    let phylogeny_path = format!("{}/{}", &dataset_dir, "graph.dot");
+    let sequences_path = Path::new("data/XBB.1.16.fasta");
+    let reference_path = dataset_dir.join("reference.fasta");
+    let populations_path = dataset_dir.join("populations.fasta");
+    let phylogeny_path = dataset_dir.join("graph.dot");
 
     // ------------------------------------------------------------------------
     // Dataset
 
-    // Sequences
-    info!("Preparing dataset sequences: {}", &populations_path);
-    let mut dataset = Sequences::new();
-    dataset.set_sequences(&reference_path, &populations_path, &mask).unwrap();
-    dataset.set_mutations().unwrap();
+    let mut dataset = Dataset::new();
 
     // Phylogeny
-    info!("Preparing dataset phylogeny: {}", &phylogeny_path);
-    let mut phylogeny = Phylogeny::new();
-    phylogeny.build_graph(&dataset_name, &dataset_tag, &dataset_dir).expect("Failed to build phylogeny.");
-    phylogeny.export_graph(&dataset_dir).expect("Failed to export phylogeny.");
+    info!("Preparing dataset phylogeny: {}", &phylogeny_path.display());    
+    dataset.phylogeny.build_graph(&dataset_name, &dataset_tag, &dataset_dir).expect("Failed to build phylogeny.");
+    dataset.phylogeny.export_graph(&dataset_dir).expect("Failed to export phylogeny.");
 
-    let name = "XBB.1.16".to_string();
-    let descendants = phylogeny.get_descendants(&name).unwrap();
-    println!("{}", descendants.join(", "));
-    
-    let name = "XA".to_string();
-    let ancestors = phylogeny.get_ancestors(&name).unwrap();
-    println!("ancestors: {:?}", ancestors);
+    // // Sequences
+    // info!("Preparing dataset sequences: {}", &populations_path.display());
+    // dataset.populations.set_sequences(&reference_path, &populations_path, &mask).unwrap();
+    // dataset.populations.set_mutations().unwrap();
 
-    let name_1 = "BA.1".to_string();
-    let name_2 = "BA.2".to_string();
-    let mrca = phylogeny.get_common_ancestor(&name_1, &name_2).unwrap();
-    println!("mrca: {:?}", mrca);
+    // // ------------------------------------------------------------------------
+    // // Run
 
-    // ------------------------------------------------------------------------
-    // Run
-
-    // info!("Importing query sequences: {}", &sequences_path);    
+    // info!("Importing query sequences: {}", &sequences_path.display());    
     // let mut query = Sequences::new();
     // query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
     // query.summarise_barcodes(&dataset).unwrap();

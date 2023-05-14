@@ -7,10 +7,11 @@ use eyre::Report;
 use crate::traits::Summary;
 use crate::mutation::Mutation;
 use crate::dataset::sequences::Sequences;
+use crate::dataset::Dataset;
 
 #[derive(Debug)]
 pub struct BarcodeMatch {
-    name: String,
+    consensus_population: String,
     top_populations: Vec<String>,
     barcode: Vec<Mutation>,
     support: Vec<Mutation>,
@@ -22,7 +23,7 @@ pub struct BarcodeMatch {
 impl BarcodeMatch {
     pub fn new() -> Self {
         BarcodeMatch {
-            name: String::new(),
+            consensus_population: String::new(),
             top_populations: Vec::new(),
             barcode: Vec::new(),
             support: Vec::new(),
@@ -32,7 +33,7 @@ impl BarcodeMatch {
         }
     }
 
-    pub fn search(&mut self, mutations: &Vec<Mutation>, missing: &Vec<isize>, barcode_summary : &HashMap<String, isize>, dataset: &Sequences) -> Result<(), Report> {
+    pub fn search(&mut self, mutations: &Vec<Mutation>, missing: &Vec<isize>, barcode_summary : &HashMap<String, isize>, dataset: &Dataset) -> Result<(), Report> {
 
         let mut max_total = 0 as isize;
 
@@ -50,10 +51,17 @@ impl BarcodeMatch {
                 self.top_populations.push(population.to_string());
             }
         }
-        self.name = self.top_populations[0].clone();  
-        // If we have a tree, we can summarize max_populations by 
-        // their common ancestor. Until then, just use first for speed.
-        self.barcode = dataset.sequences[&self.name].substitutions.clone();
+
+        // If we don't have a phylogeny, just take first top_populations
+        if dataset.phylogeny.is_empty() {
+            self.consensus_population = self.top_populations[0].clone();
+        }
+        else {
+            println!("top_populations: {:?}", self.top_populations);
+            self.consensus_population = self.top_populations[0].clone();
+        }
+
+        self.barcode = dataset.populations.sequences[&self.consensus_population].substitutions.clone();
 
         for sub in &self.barcode{
             if mutations.contains(&sub){
@@ -82,8 +90,8 @@ impl BarcodeMatch {
 impl Summary for BarcodeMatch {
     fn summary(&self) -> String {
         format!(
-            "name: {}\ntop_populations: {}\nbarcode: {}\nmissing: {}\nconflict_ref: {}\nconflict_alt: {}\n",
-            self.name,
+            "consensus_population: {}\ntop_populations: {}\nbarcode: {}\nmissing: {}\nconflict_ref: {}\nconflict_alt: {}\n",
+            self.consensus_population,
             self.top_populations.iter().join(", "),
             self.barcode.iter().join(", "),
             self.missing.iter().join(", "),
