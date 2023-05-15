@@ -54,6 +54,9 @@ fn main() {
     query.set_sequences(&reference_path, &sequences_path, &mask).unwrap();
     query.summarise_barcodes(&dataset).unwrap();
 
+    // 1. Sumarise the barcodes (conflicts, support, total), etc.
+    // 2. Assign consensus population (Barcode Match)
+    // 3. Find recombination parents (Barcode Match)
 
 }
 

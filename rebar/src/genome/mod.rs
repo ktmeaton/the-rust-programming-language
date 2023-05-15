@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use log::debug;
 use itertools::Itertools;
 use eyre::Report;
 
@@ -9,7 +8,11 @@ use crate::mutation::Mutation;
 use crate::traits::Summary;
 use crate::barcode::BarcodeMatch;
 
-
+// support: Mutation in genome is present in population's barcode.
+// conflict_alt: Mutation in genome is absent in population's barcode.
+// conflict_ref: Mutation in population's barcode is absent in genome.
+// private: Private mutations only found in genome       
+// barcode_summary: final stat, support - conflict_ref
 #[derive(Debug)]
 pub struct Genome {
     pub id: String,
@@ -18,6 +21,11 @@ pub struct Genome {
     pub missing: Vec<isize>,
     pub deletions: Vec<Mutation>,
     pub substitutions: Vec<Mutation>,
+    pub support: HashMap<String, isize>,
+    pub conflict_alt: HashMap<String, isize>,
+    pub conflict_ref: HashMap<String, isize>,
+    pub private: Vec<Mutation>,
+    pub total: HashMap<String, isize>,
     pub consensus_population: BarcodeMatch,
 }
 
@@ -36,6 +44,11 @@ impl Genome {
             missing: Vec::new(),
             deletions: Vec::new(),
             substitutions: Vec::new(),
+            support: HashMap::new(),
+            conflict_alt: HashMap::new(),
+            conflict_ref: HashMap::new(),
+            private: Vec::new(),
+            total: HashMap::new(),
             consensus_population: BarcodeMatch::new(),
         }
     }
@@ -84,38 +97,22 @@ impl Genome {
 
     pub fn summarise_barcode(&mut self, dataset : &Dataset, mutations: &Vec<Mutation>) -> Result<(), Report>  {
 
-        debug!("sequence: {}", self.id);
-    
-        // support: Mutation in genome is present in population's barcode.
-        // conflict_alt: Mutation in genome is absent in population's barcode.
-        // conflict_ref: Mutation in population's barcode is absent in genome.
-        // private: Private mutations only found in genome       
-        // barcode_summary: final stat, support - conflict_ref
-        let mut support: HashMap<String, isize> = HashMap::new();
-        let mut conflict_alt: HashMap<String, isize> = HashMap::new();
-        let mut conflict_ref: HashMap<String, isize> = HashMap::new();
-        let mut private: Vec<Mutation> = Vec::new();
-        let mut barcode_summary: HashMap<String, isize> = HashMap::new();
-
-        // support
+        // First, find dataset populations with a barcode match to a genome sub
         for mutation in mutations {
-            // Barcode match
             if dataset.populations.mutations.contains_key(mutation){
-
                 let population_matches = dataset.populations.mutations[mutation].clone();
-
                 for population in population_matches{
-                    *support.entry(population).or_insert(0) += 1;
+                    *self.support.entry(population).or_insert(0) += 1;
                 }
             } 
-            // Private mutation
+            // If no population matches a mutation, it's 'private'
             else {
-                private.push(mutation.clone())
+                self.private.push(mutation.clone())
             }
         }
 
-        // conflict_ref, conflict_alt, and total
-        for population in support.keys() {
+        // For populations that had support, summarize their conflicts
+        for population in self.support.keys() {
             let population_sub = &dataset.populations.sequences[population].substitutions;
 
             // conflict_ref
@@ -124,7 +121,7 @@ impl Genome {
                 .filter(|sub| !self.substitutions.contains(sub))
                 .collect::<Vec<_>>();
             let num_conflict_ref = population_conflict_ref.len() as isize;
-            conflict_ref.insert(population.clone(), num_conflict_ref);
+            self.conflict_ref.insert(population.clone(), num_conflict_ref);
 
             // conflict_alt
             let population_conflict_alt = self.substitutions
@@ -132,16 +129,16 @@ impl Genome {
                 .filter(|sub| !population_sub.contains(sub))
                 .collect::<Vec<_>>();
             let num_conflict_alt = population_conflict_alt.len() as isize;
-            conflict_alt.insert(population.clone(), num_conflict_alt);
+            self.conflict_alt.insert(population.clone(), num_conflict_alt);
 
             // total
-            let num_total = support[population] - num_conflict_ref;
-            barcode_summary.insert(population.clone(), num_total);
+            let num_total = self.support[population] - num_conflict_ref;
+            self.total.insert(population.clone(), num_total);
 
-        }        
+        }
     
-        let mut barcode_match = BarcodeMatch::new();
-        barcode_match.search(&mutations, &self.missing, &barcode_summary, &dataset).unwrap();
+        //let mut barcode_match = BarcodeMatch::new();
+        //barcode_match.search(&mutations, &self.missing, &barcode_summary, &dataset).unwrap();
 
         Ok(())
     }    
@@ -150,12 +147,46 @@ impl Genome {
 
 impl Summary for Genome {
     fn summary(&self) -> String {
-        format!(
-            "id: {}\nmissing: {}\ndeletions: {}\nsubstitutions: {}",
+
+        // This is good for dev, but might be too slow for production?
+
+        let mut support = self.support.iter().collect::<Vec<_>>();
+        support.sort_by(|a, b| b.1.cmp(a.1));
+
+        let mut conflict_alt = self.conflict_alt.iter().collect::<Vec<_>>();
+        conflict_alt.sort_by(|a, b| b.1.cmp(a.1));
+        conflict_alt.reverse();
+
+        let mut conflict_ref = self.conflict_ref.iter().collect::<Vec<_>>();
+        conflict_ref.sort_by(|a, b| b.1.cmp(a.1));
+        conflict_ref.reverse();
+        
+        let mut total = self.total.iter().collect::<Vec<_>>();
+        total.sort_by(|a, b| b.1.cmp(a.1)); 
+
+        // This is terrible code formatting, I'm not surely how to improve yet,
+        // While keeping str output format readable
+        format!("
+            id:             {}
+            missing:        {}
+            deletions:      {}
+            substitutions:  {}
+            private:        {:?}
+            support:        {:?}
+            conflict_alt:   {:?}
+            conflict_ref:   {:?}
+            total:          {:?}
+            ",
             self.id,
             self.missing.iter().format(", "),
             self.deletions.iter().format(", "),
             self.substitutions.iter().format(", "),
+            self.private.iter().format(", "),            
+            support.iter().format(", "),
+            conflict_alt.iter().format(", "),
+            conflict_ref.iter().format(", "),
+            total.iter().format(", "),
+
         )
     }
 }

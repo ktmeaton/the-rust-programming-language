@@ -6,6 +6,7 @@ use std::path::Path;
 use bio::io::fasta;
 use itertools::Itertools;
 use eyre::Report;
+use log::debug;
 
 // This crate
 use crate::dataset::Dataset;
@@ -105,10 +106,11 @@ impl Sequences {
         for (_id, genome) in &mut self.sequences {
             let mutations = genome.substitutions.clone();
             genome.summarise_barcode(&dataset, &mutations).unwrap();
-        }        
+            debug!("{}", genome.summary());
+        }
 
         Ok(())
 
-    } 
+    }
 
 }
