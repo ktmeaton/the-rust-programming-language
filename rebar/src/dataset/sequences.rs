@@ -109,6 +109,7 @@ impl Sequences {
             // Compare genome to all population barcodes in the dataset
             genome.summarise_barcode(&dataset, &mutations).unwrap();
             debug!("{}", genome.summary());
+
             // Find the consensus population (best match)
             genome.consensus_population.search(
                 &genome.substitutions, 
@@ -118,6 +119,24 @@ impl Sequences {
             ).unwrap();
             debug!("{}", genome.consensus_population.summary());
 
+            // Search for recombination parents if either there are conflicts,
+            // or this is a known recombinant
+            if genome.consensus_population.is_recombinant || genome.conflict_ref.len() > 0 {
+                let mut exclude_populations: Vec<String> = Vec::new();
+                let mut include_populations: Vec<String> = Vec::new();
+
+                // Exclude descendants of the consensus from the parent search
+                let descendants = dataset.phylogeny.get_descendants(&genome.consensus_population.population).unwrap();
+                exclude_populations.extend(descendants);
+
+                // Exclude ... conflict ref or alt?
+
+                // Include populations that have the conflict alt
+                let test = genome.conflict_alt.iter().filter(|(pop, count)| count > &&(1 as isize)).collect::<Vec<_>>();
+
+                println!("exclude: {}", exclude_populations.join(", "));
+                println!("include: {}", include_populations.join(", "));
+            }
             break
         }
 
