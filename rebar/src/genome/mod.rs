@@ -1,3 +1,5 @@
+pub mod barcode;
+
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -6,7 +8,7 @@ use eyre::Report;
 use crate::dataset::Dataset;
 use crate::mutation::Mutation;
 use crate::traits::Summary;
-use crate::barcode::BarcodeMatch;
+use crate::genome::barcode::BarcodeMatch;
 
 // support: Mutation in genome is present in population's barcode.
 // conflict_alt: Mutation in genome is absent in population's barcode.
@@ -141,8 +143,7 @@ impl Genome {
         //barcode_match.search(&mutations, &self.missing, &barcode_summary, &dataset).unwrap();
 
         Ok(())
-    }    
-
+    }
 }
 
 impl Summary for Genome {
@@ -166,7 +167,8 @@ impl Summary for Genome {
 
         // This is terrible code formatting, I'm not surely how to improve yet,
         // While keeping str output format readable
-        format!("
+        format!(
+            "\n
             id:             {}
             missing:        {}
             deletions:      {}
@@ -190,3 +192,4 @@ impl Summary for Genome {
         )
     }
 }
+

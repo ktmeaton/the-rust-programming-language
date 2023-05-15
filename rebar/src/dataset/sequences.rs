@@ -105,8 +105,20 @@ impl Sequences {
 
         for (_id, genome) in &mut self.sequences {
             let mutations = genome.substitutions.clone();
+
+            // Compare genome to all population barcodes in the dataset
             genome.summarise_barcode(&dataset, &mutations).unwrap();
             debug!("{}", genome.summary());
+            // Find the consensus population (best match)
+            genome.consensus_population.search(
+                &genome.substitutions, 
+                &genome.missing, 
+                &genome.total, 
+                &dataset
+            ).unwrap();
+            debug!("{}", genome.consensus_population.summary());
+
+            break
         }
 
         Ok(())

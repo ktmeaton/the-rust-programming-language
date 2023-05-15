@@ -6,6 +6,7 @@ use eyre::Report;
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::dot::{Dot, Config};
 use petgraph::visit::Dfs;
+use petgraph::Direction;
 
 use std::fs::File;
 use std::io::Write;
@@ -27,6 +28,7 @@ pub struct Phylogeny {
     pub graph: Graph<String, isize>,
     pub order: Vec<String>,
     pub lookup: HashMap<String, NodeIndex>,
+    pub recombinants: Vec<String>,
 }
 
 impl Phylogeny {
@@ -35,6 +37,7 @@ impl Phylogeny {
             graph: Graph::new(),
             order : Vec::new(),
             lookup: HashMap::new(), 
+            recombinants: Vec::new(),
         }
     }
 
@@ -44,6 +47,40 @@ impl Phylogeny {
         } else {
             false
         }
+    }
+
+    pub fn is_recombinant(&self, name: &String) -> Result<bool, Report> {
+
+        let node = self.get_node(name).unwrap();
+        let mut edges = self.graph.neighbors_directed(node, Direction::Incoming).detach();
+
+        // Recombinants have more than 1 incoming edge
+        let mut num_edges = 0;
+        while let Some(_edge) = edges.next_edge(&self.graph) {
+            num_edges += 1;
+        }
+
+        if num_edges > 1 {
+            Ok(true)
+        } 
+        else {
+            Ok(false)
+        }
+
+    }
+
+    pub fn get_recombinants(&self) -> Result<Vec<String>, Report> {
+        let mut recombinants: Vec<String> = Vec::new();
+
+        for node in self.graph.node_indices() {
+            let name = self.get_name(&node).unwrap();
+            let is_recombinant = self.is_recombinant(&name).unwrap();
+            if is_recombinant {
+                recombinants.push(name);
+            }                
+        }
+
+        Ok(recombinants)
     }
 
     pub fn build_graph(&mut self, dataset_name: &str, dataset_tag: &str, dataset_dir: &Path)  -> Result<(), Report> {
@@ -69,6 +106,11 @@ impl Phylogeny {
             let id = self.graph.add_node(name.clone());
             self.lookup.insert(name.clone(), id.clone());
             let parents = &graph_data[&name.clone()];
+
+            // If multiple parents add this to recombinants list
+            if parents.len() > 1 {
+                self.recombinants.push(name.clone());
+            }
             for parent in parents {
                 let parent_id = self.lookup[&parent.clone()];
                 self.graph.add_edge(parent_id, id, 1);

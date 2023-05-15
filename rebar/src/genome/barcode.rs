@@ -17,6 +17,8 @@ pub struct BarcodeMatch {
     missing: Vec<Mutation>,
     conflict_ref: Vec<Mutation>,
     conflict_alt: Vec<Mutation>,
+    recombinant: String,
+    recursive: bool,
 }
 
 impl BarcodeMatch {
@@ -28,15 +30,23 @@ impl BarcodeMatch {
             support: Vec::new(),
             missing: Vec::new(),
             conflict_ref: Vec::new(),
-            conflict_alt: Vec::new(),            
+            conflict_alt: Vec::new(),
+            recombinant: String::new(),
+            recursive: false,
         }
     }
 
-    pub fn search(&mut self, mutations: &Vec<Mutation>, missing: &Vec<isize>, barcode_summary : &HashMap<String, isize>, dataset: &Dataset) -> Result<(), Report> {
+    pub fn search(
+        &mut self, 
+        mutations: &Vec<Mutation>, 
+        missing: &Vec<isize>, 
+        barcode_total : &HashMap<String, isize>, 
+        dataset: &Dataset) 
+        -> Result<(), Report> {
 
         let mut max_total = 0 as isize;
 
-        for (_population, total) in barcode_summary {
+        for (_population, total) in barcode_total {
             if total >= &max_total{
                 max_total = *total;
             }
@@ -45,7 +55,7 @@ impl BarcodeMatch {
         // --------------------------------------------------------------------    
         // Search for top_populations and consensus_population   
 
-        for (population, count) in barcode_summary{
+        for (population, count) in barcode_total{
             if count >= &max_total{
                 self.top_populations.push(population.to_string());
             }
@@ -58,6 +68,7 @@ impl BarcodeMatch {
         // Otherwise, consensus is mrca of top
         else {
             self.consensus_population = dataset.phylogeny.get_common_ancestor(&self.top_populations).unwrap();
+            self.set_recombinant_status(dataset).unwrap();
         }
 
         self.barcode = dataset.populations.sequences[&self.consensus_population].substitutions.clone();
@@ -84,13 +95,37 @@ impl BarcodeMatch {
         
         Ok(())
     }
+
+    pub fn set_recombinant_status(&mut self, dataset: &Dataset) -> Result<(), Report>  {
+
+        let recombinants = dataset.phylogeny.get_recombinants().unwrap();
+        for recombinant in recombinants {
+            let descendants = &dataset.phylogeny.get_descendants(&recombinant).unwrap();
+            if descendants.contains(&self.consensus_population){
+                self.recombinant = recombinant.clone();
+            }            
+        }      
+        Ok(())
+
+    }
 }
 
 impl Summary for BarcodeMatch {
     fn summary(&self) -> String {
         format!(
-            "consensus_population: {}\ntop_populations: {}\nbarcode: {}\nmissing: {}\nconflict_ref: {}\nconflict_alt: {}\n",
+            "\n
+            consensus_population: {}
+            recombinant:          {}
+            recursive:            {}
+            top_populations:      {}
+            barcode:              {}
+            missing:              {}
+            conflict_ref:         {}
+            conflict_alt:         {}
+            ",
             self.consensus_population,
+            self.recombinant,
+            self.recursive,            
             self.top_populations.iter().join(", "),
             self.barcode.iter().join(", "),
             self.missing.iter().join(", "),
