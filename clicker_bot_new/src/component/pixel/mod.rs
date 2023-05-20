@@ -1,39 +1,52 @@
 use color_eyre::eyre::Report;
 use device_query::{DeviceQuery, DeviceState};
-use image::{GenericImageView, Rgba};
 use image::io::Reader as ImageReader;
+use image::GenericImageView;
 use log::debug;
+use screenshots::Screen;
+use serde::{Deserialize, Serialize};
+use std::default::Default;
 use std::fs::write;
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
-use screenshots::Screen;
 use tempfile::NamedTempFile;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Pixel {
-    x : usize,
-    y : usize,
-    rgba : Rgba<u8>,
+    x: usize,
+    y: usize,
+    rgba: [u8; 4],
 }
 
-pub fn select(screen: Screen, wait: Duration) -> Result<Pixel, Report> {
-
+pub fn select(screen: Screen) -> Result<Pixel, Report> {
     let device_state = DeviceState::new();
     let mut pixel_selected = false;
     let mut x = 0;
     let mut y = 0;
+    let wait = Duration::from_millis(10);
 
+    let mut mouse = device_state.get_mouse();
+    let mut left_click = mouse.button_pressed[1];
+
+    // If the left button is already pressed, wait until it's released
+    while left_click {
+        mouse = device_state.get_mouse();
+        left_click = mouse.button_pressed[1];
+    }
+
+    // Now that the left button is released, wait for it to be clicked again
     while !pixel_selected {
-
-        let mouse = device_state.get_mouse();
-        let left_click = mouse.button_pressed[1];
+        mouse = device_state.get_mouse();
+        left_click = mouse.button_pressed[1];
 
         x = mouse.coords.0;
         y = mouse.coords.1;
 
-        if left_click { pixel_selected = true; }
+        if left_click {
+            pixel_selected = true;
+        }
         thread::sleep(wait);
     }
 
@@ -51,13 +64,14 @@ pub fn select(screen: Screen, wait: Duration) -> Result<Pixel, Report> {
     // Parse img to pixel
     let img = ImageReader::open(&tmp_file)?.decode()?;
     let rgba = img.get_pixel(0, 0);
+    // Convert to array, for deserialize
+    let rgba = [rgba[0], rgba[1], rgba[2], rgba[3]];
     let pixel = Pixel {
         x: x as usize,
         y: y as usize,
-        rgba
+        rgba,
     };
     debug!("{pixel:?}");
 
     Ok(pixel)
-
 }

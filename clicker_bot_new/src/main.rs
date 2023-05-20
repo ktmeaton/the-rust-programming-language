@@ -1,83 +1,42 @@
-use clicker_bot::component::pixel;
-use color_eyre::eyre::{Result, Report};
+use clap::Parser;
+use clicker_bot::cli::{verbosity::Verbosity, Cli};
+use clicker_bot::component::bot::Bot;
+use color_eyre::eyre::{Report, Result};
 use log::info;
-use screenshots::Screen;
 use std::env;
-use std::time::Duration;
+use std::str::FromStr;
 
-// #[derive(Debug)]
-// struct Bot {
-//     wait: Duration,
-// }
-
-// impl Default for Bot {
-//     fn default() -> Self {
-//         Bot {
-//             wait: Duration::from_millis(10)
-//         }
-//     }
-// }
-
-// #[derive(Debug)]
-// struct Human {
-//     mouse: Mouse,
-// }
-
-// impl Default for Human {
-//     fn default() -> Self {
-//         Human {
-//             mouse: Mouse::default(),
-//         }
-//     }
-// }
-
-// #[derive(Debug)]
-// struct Mouse {
-//     left_click: bool,
-//     x: i32,
-//     y: i32,
-// }
-
-// impl Default for Mouse {
-//     fn default() -> Self {
-//         Mouse {
-//             left_click: false,
-//             x : 0,
-//             y : 0,
-//         }
-//     }
-// }
-
-fn main () -> Result<(), Report> {
-
-    let verbosity = "debug";
-
-    // Set default logging level if RUST_LOG is not set.
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", verbosity)
+fn setup(args: Cli) -> Result<(), Report> {
+    let verbosity = args.verbosity;
+    if let Some(verbosity) = verbosity {
+        let level = Verbosity::from_str(&verbosity).expect("Unknown verbosity level");
+        env::set_var("RUST_LOG", level.to_string());
     }
 
     env_logger::init();
-    color_eyre::install()?;
-
-    // Initialize devices
-    // Screen, keys, mouse
-
-    // Screen
-    let screens = Screen::all().unwrap();
-    let screen = screens[0];
-
-    // let device_state = DeviceState::new();
-
-    // let mut bot = Bot::default();
-    // let mut human = Human::default();
-    // let mut mouse = device_state.get_mouse();
-
-    // Monster
-    info!("Click on the target monster pixel.");
-    let wait = Duration::from_millis(10);
-    let _pixel = pixel::select(screen, wait)?;
 
     Ok(())
+}
 
+fn main() -> Result<(), Report> {
+    color_eyre::install()?;
+
+    // Parse CLI parameters
+    let args = Cli::parse();
+
+    // Misc setup actions like logging
+    setup(args.clone()).unwrap();
+
+    // If the config file doesn't exist, create a fresh bot
+    if !args.config.exists() {
+        let mut bot = Bot::new()?;
+        bot.export(&args.config)?;
+    }
+
+    let bot = Bot::from_config(&args.config)?;
+
+    info!("Starting bot.");
+    bot.start()?;
+
+    Ok(())
 }
