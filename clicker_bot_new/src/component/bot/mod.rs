@@ -14,6 +14,7 @@ pub struct Bot {
     trainer_soul: Bar,
     digimon_health: Bar,
     digimon_soul: Bar,
+    heal_percent: Vec<f64>,
 }
 
 impl Default for Bot {
@@ -24,6 +25,7 @@ impl Default for Bot {
             trainer_soul: Bar::default(),
             digimon_health: Bar::default(),
             digimon_soul: Bar::default(),
+            heal_percent: vec![25.0, 50.0, 75.0]
         }
     }
 }
@@ -38,6 +40,7 @@ impl Bot {
             trainer_soul: bar::select("trainer_soul")?,
             digimon_health: bar::select("digimon_health")?,
             digimon_soul: bar::select("digimon_soul")?,
+            heal_percent: vec![25.0, 50.0, 75.0],
         };
 
         Ok(bot)
@@ -59,7 +62,13 @@ impl Bot {
         while !escape {
             keys = device_state.get_keys();
             escape = keys.contains(&Keycode::Escape);
+            self.heal()?;
         }
+
+        Ok(())
+    }
+
+    pub fn heal(&self)  -> Result<(), Report> {
 
         Ok(())
     }

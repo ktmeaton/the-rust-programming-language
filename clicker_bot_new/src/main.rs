@@ -28,7 +28,7 @@ fn main() -> Result<(), Report> {
     setup(args.clone()).unwrap();
 
     // If the config file doesn't exist, create a fresh bot
-    if !args.config.exists() {
+    if !args.config.exists() | args.overwrite {
         let mut bot = Bot::new()?;
         bot.export(&args.config)?;
     }

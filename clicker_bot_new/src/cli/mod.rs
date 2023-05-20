@@ -14,7 +14,12 @@ pub struct Cli {
     #[arg(short, long, required = true)]
     pub config: PathBuf,
 
-    /// Make output more quiet or more verbose
+
+    #[arg(short, long, action)]
+    pub overwrite: bool,
+
+    /// Set verbosity of log
     #[arg(short, long, default_value = "info")]
     pub verbosity: Option<String>,
+
 }
